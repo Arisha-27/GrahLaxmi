@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #FFF7F4;
   --foreground: #171717;
 }
 
@@ -23,4 +23,23 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button {
+  background-color: #CF5244;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 1.5rem;
+}
+
+h1 {
+  color: #AE2759;
+  font-size: 4.5rem;
+}
+
+.hero p {
+  color: #645757;
+  font-size: 2.9rem;
+  margin: 20px 0;
 }
