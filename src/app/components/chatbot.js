@@ -11,15 +11,15 @@ export default function Chatbot() {
   });
   const [currentChatId, setCurrentChatId] = useState(null);
   const [input, setInput] = useState("");
+  const [userName, setUserName] = useState("");
   const videoRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  const speak = (text, onEnd) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    if (onEnd) utterance.onend = onEnd;
-    window.speechSynthesis.speak(utterance);
-  };
+  useEffect(() => {
+    // ✅ Load user name from localStorage
+    const storedName = localStorage.getItem("userName");
+    if (storedName) setUserName(storedName);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,6 +31,13 @@ export default function Chatbot() {
       videoRef.current.playbackRate = 0.4;
     }
   }, []);
+
+  const speak = (text, onEnd) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    if (onEnd) utterance.onend = onEnd;
+    window.speechSynthesis.speak(utterance);
+  };
 
   const currentChat = chats.find(c => c.id === currentChatId);
 
@@ -96,7 +103,6 @@ export default function Chatbot() {
       const data = await resp.json();
       const markdownReply = data.choices?.[0]?.message?.content || "🤖 Sorry, no response.";
       replaceLastBotReply(chatId, marked.parse(markdownReply));
-
       speak(markdownReply);
     } catch (error) {
       replaceLastBotReply(chatId, "⚠️ Error: " + error.message);
@@ -115,7 +121,6 @@ export default function Chatbot() {
 
   return (
     <div className="flex w-screen h-screen overflow-hidden text-black">
-      
       {/* Sidebar */}
       <aside className="w-72 bg-gradient-to-b from-[#e0c3fc] via-[#8ec5fc] to-[#e0c3fc] text-black p-6 flex flex-col justify-between border-r shadow-lg">
         <div className="flex flex-col items-center gap-4">
@@ -170,8 +175,9 @@ export default function Chatbot() {
         </video>
 
         <div className="w-[70%] h-[85%] bg-white/90 backdrop-blur-md shadow-2xl rounded-[60px] flex flex-col overflow-hidden z-10">
+          {/* 👋 User Greeting */}
           <div className="text-xl font-semibold px-10 py-4 border-b bg-white/80 text-center">
-            {currentChat?.title || "Start a new financial chat"}
+            👋 Hello, {userName || "Guest"}!
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -184,7 +190,10 @@ export default function Chatbot() {
                     : "bg-white text-black text-left rounded-bl-none"
                 }`}
               >
-                <div className="prose prose-sm max-w-none [&>a]:text-indigo-700 [&>a:hover]:underline [&>button]:bg-indigo-100 [&>button]:text-indigo-800 [&>button]:rounded-md [&>button]:px-2 [&>button]:py-1 [&>svg]:stroke-indigo-800" dangerouslySetInnerHTML={{ __html: msg.text }} />
+                <div
+                  className="prose prose-sm max-w-none [&>a]:text-indigo-700 [&>a:hover]:underline [&>button]:bg-indigo-100 [&>button]:text-indigo-800 [&>button]:rounded-md [&>button]:px-2 [&>button]:py-1 [&>svg]:stroke-indigo-800"
+                  dangerouslySetInnerHTML={{ __html: msg.text }}
+                />
               </div>
             ))}
 
