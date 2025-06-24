@@ -44,6 +44,7 @@ import joblib
 import sqlite3
 import pandas as pd
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -61,31 +62,53 @@ def home():
 def predict():
     try:
         data = request.get_json()
-
-        # Expected columns in correct order
         expected_columns = [
-            'income',
-            'goal_type',
-            'goal_amount',
-            'duration_months',
-            'age',
-            'location_type',
-            'digital_payment',
-            'shg_membership',
-            'occupation'
+            'income', 'goal_type', 'goal_amount', 'duration_months',
+            'age', 'location_type', 'digital_payment', 'shg_membership', 'occupation'
         ]
-
-        # Create DataFrame
         input_df = pd.DataFrame([data], columns=expected_columns)
-
-        # Predict
         prediction = model.predict(input_df)
         return jsonify({'predicted_saving': round(prediction[0], 2)})
-
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-# Route: Save form data to database
+# Initialize user if not exists
+@app.route('/create-user', methods=['POST'])
+def init_user():
+    try:
+        data = request.get_json()
+        uid = data.get("uid")
+        name = data.get("name", "User")
+
+        if not uid:
+            return jsonify({"error": "UID missing"}), 400
+
+        conn = sqlite3.connect("form_data.db")
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT NOT NULL UNIQUE,
+                display_name TEXT
+            )
+        ''')
+
+        cursor.execute("SELECT id FROM users WHERE username = ?", (uid,))
+        result = cursor.fetchone()
+
+        if not result:
+            cursor.execute("INSERT INTO users (username, display_name) VALUES (?, ?)", (uid, name))
+            conn.commit()
+
+        conn.close()
+        print("✅ Created/Verified user in DB at:", os.path.abspath("form_data.db"))
+        return jsonify({"status": "ok"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+# Save form data to database
 @app.route('/save', methods=['POST'])
 def save_data():
     try:
@@ -93,7 +116,6 @@ def save_data():
         conn = sqlite3.connect('form_data.db')
         cursor = conn.cursor()
 
-        # Create table if not exists
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS form_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,7 +135,6 @@ def save_data():
             )
         ''')
 
-        # Insert user data
         cursor.execute('''
             INSERT INTO form_data (
                 user_id, income, goal_type, goal_amount, duration_months, age,
@@ -138,42 +159,53 @@ def save_data():
 
         conn.commit()
         conn.close()
+        print("✅ Data saved for user:", data.get("user_id"))
         return jsonify({"status": "saved"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Route: Get latest user data for dashboard
 @app.route('/user-data/<user_id>', methods=['GET'])
 def get_user_data(user_id):
     try:
-        conn = sqlite3.connect('form_data.db')
+        import os
+        print("📍 DB path:", os.path.abspath("form_data.db"))  # optional debug print
+
+        conn = sqlite3.connect("form_data.db")  # ✅ this line is necessary
         cursor = conn.cursor()
 
+        # Get latest form data
         cursor.execute('''
             SELECT * FROM form_data
             WHERE user_id = ?
             ORDER BY id DESC
             LIMIT 1
         ''', (user_id,))
-        row = cursor.fetchone()
+        form_row = cursor.fetchone()
+
+        # Get name from users table
+        cursor.execute('SELECT display_name FROM users WHERE username = ?', (user_id,))
+        name_row = cursor.fetchone()
+        name = name_row[0] if name_row else "User"
+
         conn.close()
 
-        if row:
+        if form_row:
             return jsonify({
-                "goal_type": row[3],
-                "goal_amount": row[4],
-                "predicted_saving": row[11],
-                "saved_till_now": row[12],
-                "goalProgress": round((row[12] / row[4]) * 100, 2)
+                "name": name,
+                "goal_type": form_row[3],
+                "goal_amount": form_row[4],
+                "predicted_saving": form_row[11],
+                "saved_till_now": form_row[12],
+                "goalProgress": round((form_row[12] / form_row[4]) * 100, 2)
             })
         else:
-            return jsonify({"error": "No data found"}), 404
+            return jsonify({"name": name, "error": "No data found"}), 404
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Route: Update savings progress
+# Update savings progress
 @app.route('/update-progress', methods=['POST'])
 def update_progress():
     try:
@@ -196,11 +228,13 @@ def update_progress():
 
         conn.commit()
         conn.close()
+        print("✅ Updated progress for:", user_id)
         return jsonify({"status": "progress updated"})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Run Flask server
+# Run server
 if __name__ == '__main__':
+    print("📂 DB path:", os.path.abspath("form_data.db"))
     app.run(debug=True)

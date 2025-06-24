@@ -156,7 +156,8 @@ import { useRouter } from "next/navigation";
 
 const SavingsForm = () => {
   const router = useRouter();
-  const user_id = "aiman123"; // hardcoded for now
+
+  const [userId, setUserId] = useState(null);
 
   const [formData, setFormData] = useState({
     income: "",
@@ -172,10 +173,19 @@ const SavingsForm = () => {
     saved_till_now: 0
   });
 
+  // ✅ Load user ID and fetch existing goal if present
   useEffect(() => {
+    const uid = localStorage.getItem("uid");
+    if (!uid) {
+      alert("User not logged in!");
+      router.push("/");
+      return;
+    }
+    setUserId(uid);
+
     const fetchExistingData = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:5000/user-data/${user_id}`);
+        const res = await fetch(`http://127.0.0.1:5000/user-data/${uid}`);
         const data = await res.json();
         if (!data.error) {
           setFormData(prev => ({
@@ -202,6 +212,7 @@ const SavingsForm = () => {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
+      // Step 1: Predict saving
       const res = await fetch("http://127.0.0.1:5000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -209,13 +220,14 @@ const SavingsForm = () => {
       });
       const result = await res.json();
 
+      // Step 2: Save form with prediction and user ID
       const saveRes = await fetch("http://127.0.0.1:5000/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
           predicted_saving: result.predicted_saving,
-          user_id
+          user_id: userId
         })
       });
 

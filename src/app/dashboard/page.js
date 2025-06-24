@@ -169,7 +169,6 @@
 
 // export default Dashboard;
 
-
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -179,8 +178,10 @@ const Dashboard = () => {
   const router = useRouter();
   const amountRef = useRef();
   const [updateStatus, setUpdateStatus] = useState("");
+  const [mounted, setMounted] = useState(false);
+  const [uid, setUid] = useState(null);
   const [user, setUser] = useState({
-    name: "Aiman",
+    name: "User",
     goalProgress: 0,
     goal_type: "",
     goal_amount: 0,
@@ -188,26 +189,38 @@ const Dashboard = () => {
     saved_till_now: 0,
   });
 
+  // ✅ Defer hydration till client-side
   useEffect(() => {
+    setMounted(true);
+    const storedUid = localStorage.getItem("uid");
+    if (!storedUid) {
+      router.push("/login");
+    } else {
+      setUid(storedUid);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!uid) return;
     const fetchUser = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:5000/user-data/aiman123");
+        const res = await fetch(`http://127.0.0.1:5000/user-data/${uid}`);
         const data = await res.json();
         setUser((prev) => ({
           ...prev,
-          goalProgress: data.goalProgress,
-          goal_type: data.goal_type,
-          goal_amount: data.goal_amount,
-          predicted_saving: data.predicted_saving,
-          saved_till_now: data.saved_till_now,
+          name: data.name || "User",
+          goalProgress: data.goalProgress || 0,
+          goal_type: data.goal_type || "",
+          goal_amount: data.goal_amount || 0,
+          predicted_saving: data.predicted_saving || 0,
+          saved_till_now: data.saved_till_now || 0,
         }));
       } catch (err) {
         console.error("Error fetching user data:", err);
       }
     };
-
     fetchUser();
-  }, []);
+  }, [uid]);
 
   const handleSaveProgress = async () => {
     const amount = parseFloat(amountRef.current.value);
@@ -222,7 +235,7 @@ const Dashboard = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        user_id: "aiman123",
+        user_id: uid,
         amount: amount,
       }),
     });
@@ -231,7 +244,7 @@ const Dashboard = () => {
     if (data.status === "progress updated") {
       setUpdateStatus("✅ Progress updated");
       amountRef.current.value = "";
-      const refreshed = await fetch("http://127.0.0.1:5000/user-data/aiman123");
+      const refreshed = await fetch(`http://127.0.0.1:5000/user-data/${uid}`);
       const freshData = await refreshed.json();
       setUser((prev) => ({
         ...prev,
@@ -242,6 +255,8 @@ const Dashboard = () => {
       setUpdateStatus("❌ Error updating progress");
     }
   };
+
+  if (!mounted || !uid) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#d8b4fe] via-[#c084fc] to-[#a855f7] text-gray-800 p-6">
@@ -257,8 +272,13 @@ const Dashboard = () => {
               🎯 Your Current Goal
             </h2>
 
-            {user.goal_amount === 0 ? (
-              <p className="text-sm text-gray-500">No goal set yet.</p>
+            {user.goal_amount === 0 || user.goal_type === "" ? (
+              <>
+                <p className="text-md text-gray-600">🕵️‍♀️ You haven't set a goal yet.</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Click the button below to set your financial goal.
+                </p>
+              </>
             ) : (
               <>
                 <p className="text-md font-medium text-gray-700 capitalize">
@@ -290,26 +310,28 @@ const Dashboard = () => {
             </button>
 
             {/* Update saved amount section */}
-            <div className="mt-6">
-              <label className="block mb-1 text-sm font-medium text-gray-700">
-                Add to Saved Amount
-              </label>
-              <input
-                type="number"
-                ref={amountRef}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-                placeholder="Enter amount"
-              />
-              <button
-                className="mt-4 w-full bg-[#d38265] hover:bg-[#a0705e] text-white py-2 rounded-xl font-semibold"
-                onClick={handleSaveProgress}
-              >
-                Save Progress
-              </button>
-              {updateStatus && (
-                <p className="text-xs text-gray-600 mt-2">{updateStatus}</p>
-              )}
-            </div>
+            {user.goal_amount > 0 && (
+              <div className="mt-6">
+                <label className="block mb-1 text-sm font-medium text-gray-700">
+                  Add to Saved Amount
+                </label>
+                <input
+                  type="number"
+                  ref={amountRef}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+                  placeholder="Enter amount"
+                />
+                <button
+                  className="mt-4 w-full bg-[#d38265] hover:bg-[#a0705e] text-white py-2 rounded-xl font-semibold"
+                  onClick={handleSaveProgress}
+                >
+                  Save Progress
+                </button>
+                {updateStatus && (
+                  <p className="text-xs text-gray-600 mt-2">{updateStatus}</p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Government Schemes */}
@@ -323,7 +345,7 @@ const Dashboard = () => {
               <li>Stand-Up India - For women entrepreneurs</li>
             </ul>
             <button
-              className="mt-4 w-full  bg-[#d38265] hover:bg-[#a0705e] text-white py-2 rounded-xl font-medium"
+              className="mt-4 w-full bg-[#d38265] hover:bg-[#a0705e] text-white py-2 rounded-xl font-medium"
               onClick={() => router.push("/schemes")}
             >
               View All Schemes
