@@ -52,7 +52,7 @@ export default function HeroSection() {
 <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2">
   <HandCoins className="w-6 h-6 text-[#203c5b]" />
   <h1 className="text-3xl font-bold text-[#203c5b] tracking-wide font-serif">
-    Graha<span className="text-[#203c5b] italic">Laxmi</span>
+    Grah<span className="text-[#203c5b] italic">Laxmi</span>
   </h1>
 </div>
 

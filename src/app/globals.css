@@ -37,3 +37,16 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #999;
 }
+
+
+/* In styles/globals.css */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #fffef9;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #f97316; /* Tailwind orange-500 */
+  border-radius: 8px;
+}

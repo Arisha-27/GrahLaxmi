@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
@@ -38,7 +37,7 @@ const StickyNavbar = () => {
             height={82}
           />
           <span>
-            Graha<span className="italic text-[#203c5b]">Laxmi</span>
+            Grah<span className="italic text-[#203c5b]">Laxmi</span>
           </span>
         </div>
 
