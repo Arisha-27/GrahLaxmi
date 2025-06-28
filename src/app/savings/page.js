@@ -1,17 +1,44 @@
-import SavingsForm from "../components/SavingsForm";
+// import SavingsForm from "../components/SavingsForm";
 
+
+// export default function SavingsPage() {
+//   return (
+//     <div className="min-h-screen bg-[#efe7e0] flex items-center justify-center px-4">
+//       <div className="w-full max-w-xl">
+//         <h1 className="text-xl font-bold   mt-3">Predict Your Monthly Savings</h1>
+//         <SavingsForm />
+//       </div>
+//     </div>
+//   );
+// }
+
+
+// import SavingsForm from "../components/SavingsForm";
+
+// export default function SavingsPage() {
+//   return (
+//     <div className="min-h-screen bg-[#efe7e0] px-6 py-10">
+//       <SavingsForm />
+//     </div>
+//   );
+// }
+
+"use client";
+import { motion } from "framer-motion";
+import SavingsForm from "../components/SavingsForm";
 
 export default function SavingsPage() {
   return (
-    // <div className="bg-gradient-to-b from-[#cbb5ff] via-[#e9efff] to-[#b3d1ff] max-w-xl mx-auto mt-10 px-4">
-    //   <h1 className="text-2xl font-bold mb-6">Predict Your Monthly Savings</h1>
-    //   <SavingsForm/>
-    // </div>
-    <div className="min-h-screen bg-gradient-to-b from-[#d8b4fe] via-[#c084fc] to-[#a855f7] flex items-center justify-center px-4">
-      <div className="w-full max-w-xl">
-        <h1 className="text-2xl font-bold flex items-center justify-center text-center mt-3">Predict Your Monthly Savings</h1>
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-[#f8f4f0] to-[#efe7e0] flex items-center justify-center">
+      <motion.div
+        whileHover={{
+          scale: 1.015,
+          transition: { type: "spring", stiffness: 120, damping: 12 },
+        }}
+        className="w-full max-w-xl"
+      >
         <SavingsForm />
-      </div>
+      </motion.div>
     </div>
   );
 }
