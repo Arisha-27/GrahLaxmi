@@ -1,19 +1,40 @@
 'use client';
-import { Mic, Send } from "lucide-react";
+
+import {
+  Mic,
+  Send,
+  MessageSquare,
+  Settings,
+  Plus,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { marked } from "marked";
-import { Settings } from "lucide-react"; 
+
+// ✅ Voice Recognition Setup
+const SpeechRecognition =
+  typeof window !== "undefined" &&
+  (window.SpeechRecognition || window.webkitSpeechRecognition);
+let recognition;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.lang = "en-US";
+}
 
 export default function Chatbot() {
   const [chats, setChats] = useState(() => {
-    const saved = typeof window !== 'undefined' && localStorage.getItem("chats");
+    const saved =
+      typeof window !== "undefined" && localStorage.getItem("chats");
     return saved ? JSON.parse(saved) : [];
   });
   const [currentChatId, setCurrentChatId] = useState(null);
   const [input, setInput] = useState("");
   const [userName, setUserName] = useState("");
-  const videoRef = useRef(null);
+  const [isSpeakingEnabled, setIsSpeakingEnabled] = useState(true);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -26,24 +47,23 @@ export default function Chatbot() {
     localStorage.setItem("chats", JSON.stringify(chats));
   }, [chats, currentChatId]);
 
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.playbackRate = 0.4;
-    }
-  }, []);
-
   const speak = (text, onEnd) => {
+    if (!isSpeakingEnabled) return;
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
+    utterance.lang = "en-US";
     if (onEnd) utterance.onend = onEnd;
     window.speechSynthesis.speak(utterance);
   };
 
-  const currentChat = chats.find(c => c.id === currentChatId);
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+  };
+
+  const currentChat = chats.find((c) => c.id === currentChatId);
 
   const replaceLastBotReply = (chatId, newText) => {
-    setChats(prev =>
-      prev.map(c =>
+    setChats((prev) =>
+      prev.map((c) =>
         c.id === chatId
           ? {
               ...c,
@@ -57,8 +77,8 @@ export default function Chatbot() {
     );
   };
 
-  const handleSend = async () => {
-    const userInput = input.trim();
+  const handleSend = async (externalInput = null) => {
+    const userInput = (externalInput || input).trim();
     if (!userInput) return;
 
     let chatId = currentChatId;
@@ -66,42 +86,56 @@ export default function Chatbot() {
 
     if (!chatId) {
       chatId = uuidv4();
-      setChats(prev => [...prev, { id: chatId, title: userInput.slice(0, 25), messages: [] }]);
+      setChats((prev) => [
+        ...prev,
+        { id: chatId, title: userInput.slice(0, 25), messages: [] },
+      ]);
       setCurrentChatId(chatId);
     }
 
-    setChats(prev =>
-      prev.map(c =>
+    setChats((prev) =>
+      prev.map((c) =>
         c.id === chatId ? { ...c, messages: [...c.messages, userMsg] } : c
       )
     );
     setInput("");
 
-    setChats(prev =>
-      prev.map(c =>
+    setChats((prev) =>
+      prev.map((c) =>
         c.id === chatId
-          ? { ...c, messages: [...c.messages, { sender: "bot", text: "🔄 Thinking..." }] }
+          ? {
+              ...c,
+              messages: [
+                ...c.messages,
+                { sender: "bot", text: "🔄 Thinking..." },
+              ],
+            }
           : c
       )
     );
 
     try {
-      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer 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",
-          "HTTP-Referer": "http://localhost:3000",
-          "X-Title": "financial-women-app",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
-          messages: [{ role: "user", content: userInput }]
-        })
-      });
+      const resp = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              "Bearer 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",
+            "HTTP-Referer": "http://localhost:3000",
+            "X-Title": "financial-women-app",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
+            messages: [{ role: "user", content: userInput }],
+          }),
+        }
+      );
 
       const data = await resp.json();
-      const markdownReply = data.choices?.[0]?.message?.content || "🤖 Sorry, no response.";
+      const markdownReply =
+        data.choices?.[0]?.message?.content || "🤖 Sorry, no response.";
       replaceLastBotReply(chatId, marked.parse(markdownReply));
       speak(markdownReply);
     } catch (error) {
@@ -119,67 +153,103 @@ export default function Chatbot() {
     setInput("");
   };
 
+  const handleVoiceInput = () => {
+    if (!recognition) {
+      alert("Speech recognition not supported in this browser.");
+      return;
+    }
+
+    setIsRecording(true);
+    recognition.interimResults = true;
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          interim += transcript;
+        }
+      }
+      setInput(finalTranscript + interim);
+    };
+
+    recognition.onerror = (event) => {
+      setIsRecording(false);
+      alert("Voice input error: " + event.error);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+
+    recognition.start();
+  };
+
   return (
     <div className="flex w-screen h-screen overflow-hidden text-[#222] bg-[#fdf7ee]">
       {/* Sidebar */}
-      <aside className="w-72 bg-gradient-to-b from-[#F2C66D] via-[#E8D1A0] to-[#D8A39D] text-[#222] p-6 flex flex-col justify-between border-r shadow-lg">
-        <div className="flex flex-col items-center gap-4">
-          <img src="/icons/logo.png" alt="Logo" className="w-18 h-14 rounded-full shadow-md" />
-          <div className="text-center">
-            <h1 className="text-2xl font-bold">GrahLaxmi AI</h1>
-            <p className="text-xs text-[#666]">Your Finance Companion</p>
-          </div>
-          <button
-            onClick={handleNewChat}
-            className="mt-4 px-5 py-2 bg-[#203c5b] text-white rounded-full hover:bg-[#345272] transition-colors duration-200 text-sm shadow-md"
-          >
-            ➕ New Chat
-          </button>
-        </div>
+<aside className="w-72 bg-gradient-to-b from-[#F2C66D] via-[#f4e4d7] to-[#F2C66D] text-[#222] p-6 flex flex-col justify-between border-r border-[#e8d1a0] shadow-xl">
+  {/* Top Logo & Title */}
+  <div className="flex flex-col items-center gap-4">
+    <img
+      src="/icons/logo.png"
+      alt="Logo"
+      className="w-20 h-20 rounded-full shadow-lg border-4 border-white/40"
+    />
+    <div className="text-center space-y-1">
+      <h1 className="text-2xl font-extrabold tracking-wide text-[#222]">
+        GrahLaxmi AI
+      </h1>
+      <p className="text-sm text-[#444] italic">Your Finance Companion</p>
+    </div>
 
-        <div className="mt-6 flex-1 overflow-y-auto space-y-2 pr-1">
-          {chats.map(c => (
-            <button
-              key={c.id}
-              onClick={() => switchChat(c.id)}
-              className={`w-full text-left px-4 py-3 rounded-xl transition shadow-sm ${
-                c.id === currentChatId
-                  ? "bg-[#203c5b] text-white font-semibold"
-                  : "bg-[#fdf7ee] hover:bg-[#faede1]"
-              }`}
-            >
-              <div className="truncate flex items-center gap-2 text-sm">
-                💬 <span className="truncate">{c.title}</span>
-              </div>
-            </button>
-          ))}
-        </div>
+    <button
+      onClick={handleNewChat}
+      className="mt-5 inline-flex items-center gap-2 px-4 py-2 bg-[#203c5b] hover:bg-[#203c5bd7] text-white font-medium rounded-full transition duration-200 shadow-lg"
+    >
+      <Plus className="w-4 h-4" />
+      New Chat
+    </button>
+  </div>
 
-       <div className="pt-4 border-t text-sm text-[#666] text-center">
-  <button
-    onClick={() => alert('Settings & Help Coming Soon!')}
-    className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fdf7ee] hover:bg-[#e8d1a0] text-[#203c5b] font-medium transition shadow-sm"
-  >
-    <Settings className="w-4 h-4" />
-    <span>Settings & Help</span>
-  </button>
-</div>
+  {/* Chat List */}
+  <div className="mt-8 flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin scrollbar-thumb-[#d9c8aa] scrollbar-track-transparent">
+    {chats.map((c) => (
+      <button
+        key={c.id}
+        onClick={() => switchChat(c.id)}
+        className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium transition shadow-sm ${
+          c.id === currentChatId
+            ? "bg-[#203c5b] text-white font-semibold"
+            : "bg-[#fdf7ee] hover:bg-[#fcead8] text-[#333]"
+        }`}
+      >
+        <MessageSquare className="w-4 h-4" />
+        <span className="truncate">{c.title}</span>
+      </button>
+    ))}
+  </div>
 
-      </aside>
+  {/* Footer Settings */}
+  <div className="pt-5 border-t border-[#e8d1a0] text-sm text-[#666] text-center">
+    <button
+      onClick={() => alert("Settings & Help Coming Soon!")}
+      className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fdf7ee] hover:bg-[#e8d1a0] text-[#203c5b] font-semibold transition shadow-md"
+    >
+      <Settings className="w-4 h-4" />
+      <span>Settings & Help</span>
+    </button>
+  </div>
+</aside>
+
 
       {/* Main Chat Area */}
       <div className="relative flex-1 flex items-center justify-center bg-[#fdf7ee]">
-        <video
-          ref={videoRef}
-          className="absolute top-0 left-0 w-full h-full object-cover z-0"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src="/money.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        <div className="absolute top-0 left-0 w-full h-full z-0 bg-gradient-to-br from-[#fdf7ee] to-[#e8d1a0]" />
 
         <div className="w-[70%] h-[85%] bg-[#fdf7ee]/90 backdrop-blur-md shadow-2xl rounded-[60px] flex flex-col overflow-hidden z-10">
           <div className="text-xl font-semibold px-10 py-4 border-b bg-[#fdf7ee]/80 text-center">
@@ -197,7 +267,7 @@ export default function Chatbot() {
                 }`}
               >
                 <div
-                  className="prose prose-sm max-w-none [&>a]:text-[#203c5b] [&>a:hover]:underline [&>button]:bg-[#fdf7ee] [&>button]:text-[#222] [&>svg]:stroke-[#203c5b]"
+                  className="prose prose-sm max-w-none [&>a]:text-[#203c5b] [&>a:hover]:underline"
                   dangerouslySetInnerHTML={{ __html: msg.text }}
                 />
               </div>
@@ -205,28 +275,64 @@ export default function Chatbot() {
 
             {!currentChat && (
               <div className="bg-white/90 rounded-2xl px-5 py-4 shadow-md max-w-[70%] text-left text-sm transition text-[#222]">
-                👋 <strong>Welcome to GrahLaxmi....Your personalized Finchat ChatBot!</strong><br />
-                I'm here to help you with finance tips, planning & questions.<br />
+                👋 <strong>Welcome to GrahLaxmi... Your personalized Finchat ChatBot!</strong>
+                <br />
+                I'm here to help you with finance tips, planning & questions.
+                <br />
                 Hit “New Chat” or ask your first question to begin!
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="px-6 py-4 border-t bg-white flex items-center gap-3">
-            <button onClick={() => alert('Voice input coming soon')} className="p-2 rounded-full bg-[#203c5b] text-white hover:bg-[#345272] transition">
-              <Mic className="w-5 h-5" />
-            </button>
-            <input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleSend()}
-              placeholder="Ask about income, scheme, goal..."
-              className="flex-1 p-3 rounded-full border border-gray-300 bg-[#fdf7ee] text-[#222]"
-            />
-            <button onClick={handleSend} className="bg-[#203c5b] text-white p-3 rounded-full hover:bg-[#345272] transition">
-              <Send className="w-4 h-4" />
-            </button>
+          {/* Input Bar */}
+          <div className="px-6 py-4 border-t bg-white flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleVoiceInput}
+                className={`p-2 rounded-full ${
+                  isRecording ? "bg-[#e28555]" : "bg-[#203c5b]"
+                } text-white hover:scale-105 transition`}
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Ask about income, scheme, goal..."
+                className="flex-1 p-3 rounded-full border border-gray-300 bg-[#fdf7ee] text-[#222]"
+              />
+              <button
+                onClick={() => handleSend()}
+                className="bg-[#203c5b] text-white p-3 rounded-full hover:bg-[#345272] transition"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  if (isSpeakingEnabled) stopSpeaking();
+                  setIsSpeakingEnabled(!isSpeakingEnabled);
+                }}
+                className="flex items-center gap-2 text-sm px-4 py-1 rounded-full border border-[#203c5b] text-[#203c5b] hover:bg-[#e8d1a0] bg-[#fdf7ee] transition"
+              >
+                {isSpeakingEnabled ? (
+                  <>
+                    <VolumeX className="w-4 h-4" />
+                    Mute Bot Voice
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-4 h-4" />
+                    Enable Bot Voice
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
