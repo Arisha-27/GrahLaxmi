@@ -1,50 +1,51 @@
-// 
-// components/GoogleLogin.js
-// components/loginAuth/GoogleLogin.js
+//import { auth } from '../../../lib/firebase';
 'use client';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { auth } from '../../../lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useState } from "react";
 
 export default function GoogleLogin() {
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const login = async () => {
     try {
+      setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
-      // ✅ Save UID and name to localStorage
-      localStorage.setItem('uid', user.uid);
-      localStorage.setItem('name', user.displayName);
-
-      // ✅ Save user to backend if not already saved
-      await fetch('http://127.0.0.1:5000/create-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: user.uid,
-          name: user.displayName,
-        }),
-      });
-
-      router.push('/dashboard');
+      alert(`Welcome ${user.displayName}`);
     } catch (error) {
-      console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      console.error("Login error:", error);
+      alert("Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl px-8 py-6 text-center shadow-lg w-[90%] max-w-md">
-      <h2 className="text-2xl font-bold text-rose-700 mb-4">Sign in with Google</h2>
-      <button
-        onClick={login}
-        className="w-full py-3 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition"
-      >
-        Login with Google
-      </button>
-    </div>
+    <div className="bg-[#fdf7ee] shadow-xl rounded-2xl px-8 py-6 text-center space-y-5">
+  <h2 className="text-2xl font-bold text-[#d15b3b]">Begin your Financial Freedom With Us</h2>
+
+  <p className="text-sm text-[#666]">
+    Fast and secure sign-in to continue your journey with GrahLaxmi.
+  </p>
+<button
+  onClick={login}
+  disabled={loading}
+  className={`w-full py-3 rounded-xl font-semibold transition duration-300
+    ${loading
+      ? 'bg-[#e8d1a0] text-[#666] cursor-not-allowed'
+      : 'bg-gradient-to-r from-[#e28555] to-[#e9b149] hover:from-[#d97446] hover:to-[#dfa833] text-white shadow-md'
+    }`}
+>
+  {loading ? "Signing in..." : "Login with Google"}
+</button>
+
+
+  <p className="text-xs text-[#999]">
+    We never share your data without consent.
+  </p>
+</div>
+
   );
 }
