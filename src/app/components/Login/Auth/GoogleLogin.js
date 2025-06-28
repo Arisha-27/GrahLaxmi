@@ -22,24 +22,29 @@ export default function GoogleLogin() {
   };
 
   return (
-    <div className="bg-white shadow-xl rounded-2xl px-8 py-6 text-center space-y-5">
-      <h2 className="text-2xl font-bold text-rose-700">Sign in with Google</h2>
-      <p className="text-sm text-gray-500">
-        Fast and secure sign-in to continue your journey with GrahLaxmi.
-      </p>
+    <div className="bg-[#fdf7ee] shadow-xl rounded-2xl px-8 py-6 text-center space-y-5">
+  <h2 className="text-2xl font-bold text-[#d15b3b]">Begin your Financial Freedom With Us</h2>
 
-      <button
-        onClick={login}
-        disabled={loading}
-        className={`w-full py-3 rounded-xl font-semibold transition duration-300 
-          ${loading ? 'bg-gray-300 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg'}`}
-      >
-        {loading ? "Signing in..." : "Login with Google"}
-      </button>
+  <p className="text-sm text-[#666]">
+    Fast and secure sign-in to continue your journey with GrahLaxmi.
+  </p>
+<button
+  onClick={login}
+  disabled={loading}
+  className={`w-full py-3 rounded-xl font-semibold transition duration-300
+    ${loading
+      ? 'bg-[#e8d1a0] text-[#666] cursor-not-allowed'
+      : 'bg-gradient-to-r from-[#e28555] to-[#e9b149] hover:from-[#d97446] hover:to-[#dfa833] text-white shadow-md'
+    }`}
+>
+  {loading ? "Signing in..." : "Login with Google"}
+</button>
 
-      <p className="text-xs text-gray-400">
-        We never share your data without consent.
-      </p>
-    </div>
+
+  <p className="text-xs text-[#999]">
+    We never share your data without consent.
+  </p>
+</div>
+
   );
 }

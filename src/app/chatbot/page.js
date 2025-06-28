@@ -3,6 +3,7 @@ import { Mic, Send } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { marked } from "marked";
+import { Settings } from "lucide-react"; 
 
 export default function Chatbot() {
   const [chats, setChats] = useState(() => {
@@ -16,7 +17,6 @@ export default function Chatbot() {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // ✅ Load user name from localStorage
     const storedName = localStorage.getItem("userName");
     if (storedName) setUserName(storedName);
   }, []);
@@ -120,18 +120,18 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="flex w-screen h-screen overflow-hidden text-black">
+    <div className="flex w-screen h-screen overflow-hidden text-[#222] bg-[#fdf7ee]">
       {/* Sidebar */}
-      <aside className="w-72 bg-gradient-to-b from-[#e0c3fc] via-[#8ec5fc] to-[#e0c3fc] text-black p-6 flex flex-col justify-between border-r shadow-lg">
+      <aside className="w-72 bg-gradient-to-b from-[#F2C66D] via-[#E8D1A0] to-[#D8A39D] text-[#222] p-6 flex flex-col justify-between border-r shadow-lg">
         <div className="flex flex-col items-center gap-4">
-          <img src="/finance-icon.svg" alt="Logo" className="w-14 h-14 rounded-full shadow-md" />
+          <img src="/icons/logo.png" alt="Logo" className="w-18 h-14 rounded-full shadow-md" />
           <div className="text-center">
             <h1 className="text-2xl font-bold">GrahLaxmi AI</h1>
-            <p className="text-xs text-gray-800">Your Finance Companion</p>
+            <p className="text-xs text-[#666]">Your Finance Companion</p>
           </div>
           <button
             onClick={handleNewChat}
-            className="mt-4 px-5 py-2 bg-[#4B0082] text-white rounded-full hover:bg-[#360063] transition text-sm shadow-md"
+            className="mt-4 px-5 py-2 bg-[#203c5b] text-white rounded-full hover:bg-[#345272] transition-colors duration-200 text-sm shadow-md"
           >
             ➕ New Chat
           </button>
@@ -144,8 +144,8 @@ export default function Chatbot() {
               onClick={() => switchChat(c.id)}
               className={`w-full text-left px-4 py-3 rounded-xl transition shadow-sm ${
                 c.id === currentChatId
-                  ? "bg-[#4B0082] text-white font-semibold"
-                  : "bg-white/60 hover:bg-white/80"
+                  ? "bg-[#203c5b] text-white font-semibold"
+                  : "bg-[#fdf7ee] hover:bg-[#faede1]"
               }`}
             >
               <div className="truncate flex items-center gap-2 text-sm">
@@ -155,13 +155,20 @@ export default function Chatbot() {
           ))}
         </div>
 
-        <div className="pt-4 border-t text-sm text-gray-600 text-center">
-          <p>⚙️ Settings & Help</p>
-        </div>
+       <div className="pt-4 border-t text-sm text-[#666] text-center">
+  <button
+    onClick={() => alert('Settings & Help Coming Soon!')}
+    className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fdf7ee] hover:bg-[#e8d1a0] text-[#203c5b] font-medium transition shadow-sm"
+  >
+    <Settings className="w-4 h-4" />
+    <span>Settings & Help</span>
+  </button>
+</div>
+
       </aside>
 
       {/* Main Chat Area */}
-      <div className="relative flex-1 flex items-center justify-center bg-black">
+      <div className="relative flex-1 flex items-center justify-center bg-[#fdf7ee]">
         <video
           ref={videoRef}
           className="absolute top-0 left-0 w-full h-full object-cover z-0"
@@ -174,9 +181,8 @@ export default function Chatbot() {
           Your browser does not support the video tag.
         </video>
 
-        <div className="w-[70%] h-[85%] bg-white/90 backdrop-blur-md shadow-2xl rounded-[60px] flex flex-col overflow-hidden z-10">
-          {/* 👋 User Greeting */}
-          <div className="text-xl font-semibold px-10 py-4 border-b bg-white/80 text-center">
+        <div className="w-[70%] h-[85%] bg-[#fdf7ee]/90 backdrop-blur-md shadow-2xl rounded-[60px] flex flex-col overflow-hidden z-10">
+          <div className="text-xl font-semibold px-10 py-4 border-b bg-[#fdf7ee]/80 text-center">
             👋 Hello, {userName || "Guest"}!
           </div>
 
@@ -186,19 +192,19 @@ export default function Chatbot() {
                 key={i}
                 className={`transition-all duration-300 ease-in-out transform hover:scale-[1.01] text-sm px-5 py-3 rounded-2xl max-w-[75%] shadow-md whitespace-pre-wrap ${
                   msg.sender === "user"
-                    ? "ml-auto bg-black text-white text-right rounded-br-none"
-                    : "bg-white text-black text-left rounded-bl-none"
+                    ? "ml-auto bg-[#203c5b] text-white text-right rounded-br-none"
+                    : "bg-white text-[#222] text-left rounded-bl-none"
                 }`}
               >
                 <div
-                  className="prose prose-sm max-w-none [&>a]:text-indigo-700 [&>a:hover]:underline [&>button]:bg-indigo-100 [&>button]:text-indigo-800 [&>button]:rounded-md [&>button]:px-2 [&>button]:py-1 [&>svg]:stroke-indigo-800"
+                  className="prose prose-sm max-w-none [&>a]:text-[#203c5b] [&>a:hover]:underline [&>button]:bg-[#fdf7ee] [&>button]:text-[#222] [&>svg]:stroke-[#203c5b]"
                   dangerouslySetInnerHTML={{ __html: msg.text }}
                 />
               </div>
             ))}
 
             {!currentChat && (
-              <div className="bg-white/90 rounded-2xl px-5 py-4 shadow-md max-w-[70%] text-left text-sm transition">
+              <div className="bg-white/90 rounded-2xl px-5 py-4 shadow-md max-w-[70%] text-left text-sm transition text-[#222]">
                 👋 <strong>Welcome to GrahLaxmi....Your personalized Finchat ChatBot!</strong><br />
                 I'm here to help you with finance tips, planning & questions.<br />
                 Hit “New Chat” or ask your first question to begin!
@@ -208,7 +214,7 @@ export default function Chatbot() {
           </div>
 
           <div className="px-6 py-4 border-t bg-white flex items-center gap-3">
-            <button onClick={() => alert('Voice input coming soon')} className="p-2 rounded-full bg-black text-white">
+            <button onClick={() => alert('Voice input coming soon')} className="p-2 rounded-full bg-[#203c5b] text-white hover:bg-[#345272] transition">
               <Mic className="w-5 h-5" />
             </button>
             <input
@@ -216,9 +222,9 @@ export default function Chatbot() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Ask about income, scheme, goal..."
-              className="flex-1 p-3 rounded-full border border-gray-300 bg-[#F8F9FA]"
+              className="flex-1 p-3 rounded-full border border-gray-300 bg-[#fdf7ee] text-[#222]"
             />
-            <button onClick={() => handleSend()} className="bg-black text-white p-3 rounded-full">
+            <button onClick={handleSend} className="bg-[#203c5b] text-white p-3 rounded-full hover:bg-[#345272] transition">
               <Send className="w-4 h-4" />
             </button>
           </div>

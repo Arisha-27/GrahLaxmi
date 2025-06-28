@@ -1,7 +1,8 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth"; 
-import { getAnalytics } from "firebase/analytics";
+// src/app/lib/firebase.js
 
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1mjh_29ELgYziFPCsAgxUWFk56PApixU",
@@ -13,14 +14,20 @@ const firebaseConfig = {
   measurementId: "G-8RVXNW3WPM"
 };
 
-// Initialize Firebase App
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth (needed for login/sign-up)
+// ✅ Firebase Auth
 const auth = getAuth(app);
 
-// Optional: Initialize Analytics
-const analytics = getAnalytics(app);
+// ✅ Firebase Analytics (Only run in browser)
+if (typeof window !== 'undefined') {
+  isSupported().then((supported) => {
+    if (supported) {
+      getAnalytics(app);
+    }
+  });
+}
 
-// Export auth for use in other files
+// ✅ Export only what’s safe for SSR
 export { auth };

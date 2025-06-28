@@ -21,6 +21,9 @@ export default function SchemeCard({ scheme }) {
     'bg-[#A6A37D] text-white',
   ];
 
+  const isValidURL = (url) =>
+    typeof url === 'string' && url.trim() !== '' && url.startsWith('http');
+
   return (
     <div className="bg-[#fffaf3] border border-[#f2c66d] p-6 rounded-2xl shadow-sm hover:shadow-md transition duration-300 space-y-3">
       <h3 className="text-lg md:text-xl font-semibold text-[#222]">
@@ -44,7 +47,8 @@ export default function SchemeCard({ scheme }) {
         </div>
       )}
 
-      {scheme['Apply Link'] && (
+      {/* Apply Button or Fallback */}
+      {isValidURL(scheme['Apply Link']) ? (
         <a
           href={scheme['Apply Link']}
           target="_blank"
@@ -54,6 +58,10 @@ export default function SchemeCard({ scheme }) {
           Apply Now
           <ExternalLink size={14} />
         </a>
+      ) : (
+        <span className="inline-block text-xs font-medium text-[#999] bg-gray-100 px-3 py-1 rounded-full mt-2">
+          Online link unavailable
+        </span>
       )}
     </div>
   );
