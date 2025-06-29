@@ -13,7 +13,7 @@ export default function HeroSection() {
   const router = useRouter();
 
   const handleJoinClick = () => {
-    router.push('/waitlist');
+    router.push('/login');
   };
 
   useEffect(() => {

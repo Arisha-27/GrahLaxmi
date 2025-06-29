@@ -109,52 +109,53 @@ export default function Filters({ state, setState, filters, setFilters }) {
       </div>
     );
 
-return (
-  <aside className="w-full md:w-64 lg:w-1/5 bg-[#fffef9] p-5 border-r border-[#f2c66d] shadow-sm space-y-4 overflow-y-auto rounded-tr-2xl rounded-br-2xl min-h-[100vh]">
+  return (
+    <aside className="w-full md:w-[350px] lg:w-[420px] bg-[#fffef9] p-5 border-r border-[#f2c66d] shadow-sm space-y-4 overflow-y-auto rounded-tr-2xl rounded-br-2xl min-h-[100vh]">
+      {/* Header: Filter By + Badge + Reset */}
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold text-[#e28555] flex items-center gap-1">
+            <FunnelIcon className="w-5 h-5 text-[#e28555]" />
+            Filter By
+          </h2>
+          <span className="text-xs bg-[#f2c66d] text-[#222] px-2 py-0.5 rounded-full shadow-sm font-semibold">
+            {Object.keys(filters).filter((key) => filters[key]).length}
+          </span>
+        </div>
 
-    {/* Header: Filter By + Badge + Reset */}
-    <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-      <div className="flex items-center gap-2">
-        <h2 className="text-lg font-semibold text-[#e28555] flex items-center gap-1">
-          <FunnelIcon className="w-5 h-5 text-[#e28555]" />
-          Filter By
-        </h2>
-        <span className="text-xs bg-[#f2c66d] text-[#222] px-2 py-0.5 rounded-full shadow-sm font-semibold">
-          {Object.keys(filters).filter((key) => filters[key]).length}
-        </span>
+        <button
+          onClick={() => {
+            setFilters({});
+            setState('');
+          }}
+          className="group flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#203C5B] text-[#203C5B] hover:bg-[#203C5B] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#203C5B]"
+        >
+          <ArrowPathIcon className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
+          <span className="text-sm font-semibold">Reset Filters</span>
+        </button>
       </div>
 
-      <button
-        onClick={() => {
-          setFilters({});
-          setState('');
-        }}
-        className="group flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#203C5B] text-[#203C5B] hover:bg-[#203C5B] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#203C5B]"
-      >
-        <ArrowPathIcon className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-        <span className="text-sm font-semibold">Reset Filters</span>
-      </button>
-    </div>
-
-    {/* Dropdowns */}
-    {renderDropdown('State', 'Residence_Cleaned', dropdownOptions.Residence_Cleaned, GlobeAsiaAustraliaIcon)}
-    {renderDropdown('Age Range', 'age_range', dropdownOptions.ageRanges, UserIcon)}
-    {renderDropdown('Income Limit', 'income_upper_limit', dropdownOptions.income_upper_limit, CurrencyRupeeIcon)}
-    {renderDropdown('Income Category', 'income_category', dropdownOptions.income_category, CurrencyRupeeIcon)}
-    {renderDropdown('Sub Category', 'sub_categories', dropdownOptions.sub_categories, AcademicCapIcon)}
-    {renderDropdown('Primary Category', 'primary_category', dropdownOptions.primary_category, AcademicCapIcon)}
-    {renderDropdown('Benefit Type', 'Benefit_Category', dropdownOptions.Benefit_Category, CurrencyRupeeIcon)}
-    {renderDropdown('Marital Status', 'Marital_Status_Clean', dropdownOptions.Marital_Status_Clean, HeartIcon)}
-    {renderDropdown('BPL', 'BPL_Clean', dropdownOptions.BPL_Clean, CurrencyRupeeIcon)}
-    {renderDropdown('Employment Status', 'Employment_Status_Clean', dropdownOptions.Employment_Status_Clean, BriefcaseIcon)}
-    {renderDropdown('Application Mode', 'Application_Mode_Clean', dropdownOptions.Application_Mode_Clean, KeyIcon)}
-    {renderDropdown('Scheme Type', 'Scheme_Type_Clean', dropdownOptions.Scheme_Type_Clean, HomeIcon)}
-    {renderDropdown('Location', 'Location_Clean', dropdownOptions.Location_Clean, GlobeAsiaAustraliaIcon)}
-    {renderDropdown('Minority', 'Minority_Cleaned', dropdownOptions.Minority_Cleaned, IdentificationIcon)}
-    {renderDropdown('Disability', 'Disability_Cleaned', dropdownOptions.Disability_Cleaned, IdentificationIcon)}
-    {renderDropdown('DBT (Direct Benefit Transfer)', 'DBT', dropdownOptions.DBT, KeyIcon)}
-    {renderDropdown('Caste Category', 'caste', dropdownOptions.caste, UsersIcon)}
-    {renderDropdown('Special Identity', 'identity', dropdownOptions.identity, UserIcon)}
-  </aside>
-);
+      {/* Filters Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {renderDropdown('State', 'Residence_Cleaned', dropdownOptions.Residence_Cleaned, GlobeAsiaAustraliaIcon)}
+        {renderDropdown('Age Range', 'age_range', dropdownOptions.ageRanges, UserIcon)}
+        {renderDropdown('Income Limit', 'income_upper_limit', dropdownOptions.income_upper_limit, CurrencyRupeeIcon)}
+        {renderDropdown('Income Category', 'income_category', dropdownOptions.income_category, CurrencyRupeeIcon)}
+        {renderDropdown('Sub Category', 'sub_categories', dropdownOptions.sub_categories, AcademicCapIcon)}
+        {renderDropdown('Primary Category', 'primary_category', dropdownOptions.primary_category, AcademicCapIcon)}
+        {renderDropdown('Benefit Type', 'Benefit_Category', dropdownOptions.Benefit_Category, CurrencyRupeeIcon)}
+        {renderDropdown('Marital Status', 'Marital_Status_Clean', dropdownOptions.Marital_Status_Clean, HeartIcon)}
+        {renderDropdown('BPL', 'BPL_Clean', dropdownOptions.BPL_Clean, CurrencyRupeeIcon)}
+        {renderDropdown('Employment Status', 'Employment_Status_Clean', dropdownOptions.Employment_Status_Clean, BriefcaseIcon)}
+        {renderDropdown('Application Mode', 'Application_Mode_Clean', dropdownOptions.Application_Mode_Clean, KeyIcon)}
+        {renderDropdown('Scheme Type', 'Scheme_Type_Clean', dropdownOptions.Scheme_Type_Clean, HomeIcon)}
+        {renderDropdown('Location', 'Location_Clean', dropdownOptions.Location_Clean, GlobeAsiaAustraliaIcon)}
+        {renderDropdown('Minority', 'Minority_Cleaned', dropdownOptions.Minority_Cleaned, IdentificationIcon)}
+        {renderDropdown('Disability', 'Disability_Cleaned', dropdownOptions.Disability_Cleaned, IdentificationIcon)}
+        {renderDropdown('DBT (Direct Benefit Transfer)', 'DBT', dropdownOptions.DBT, KeyIcon)}
+        {renderDropdown('Caste Category', 'caste', dropdownOptions.caste, UsersIcon)}
+        {renderDropdown('Special Identity', 'identity', dropdownOptions.identity, UserIcon)}
+      </div>
+    </aside>
+  );
 }
