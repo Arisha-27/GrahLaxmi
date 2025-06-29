@@ -11,15 +11,28 @@ export default function AuthState({ user, setUser }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usr) => {
-      setUser(usr); // ✅ Set local user
+      setUser(usr); // ✅ Local state for this component
+
       if (usr) {
         console.log("✅ Firebase User:", usr);
+
+        // ✅ Store in global localStorage-based userStore
         setUserInfo({
           uid: usr.uid,
           email: usr.email,
-          name: usr.displayName || "", // Optional
-        }); // ✅ Set global user
+          displayName: usr.displayName || "",
+          photoURL: usr.photoURL || "",
+        });
+
         router.push("/dashboard");
+      } else {
+        // ✅ Clear user info on logout or unauthenticated
+        setUserInfo({
+          uid: "",
+          email: "",
+          displayName: "",
+          photoURL: "",
+        });
       }
     });
 
@@ -29,7 +42,15 @@ export default function AuthState({ user, setUser }) {
   const logout = async () => {
     await signOut(auth);
     setUser(null);
-    setUserInfo(null); // ✅ Reset global state
+
+    // ✅ Clear global info safely
+    setUserInfo({
+      uid: "",
+      email: "",
+      displayName: "",
+      photoURL: "",
+    });
+
     router.push("/login");
   };
 

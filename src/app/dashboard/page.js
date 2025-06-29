@@ -3,7 +3,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Doughnut, Line } from "react-chartjs-2";
+import Sidebar from "@/app/components/Sidebar"; 
 import { getUserInfo } from "@/app/lib/userStore";
+import { BadgeCheck, Target, BarChart2, TrendingUp } from "lucide-react";
+import SavingsModal from "@/app/components/SavingsForm";
+
 import {
   Chart as ChartJS,
   ArcElement,
@@ -19,7 +23,6 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
 
-// ✅ Register chart.js components
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -35,9 +38,10 @@ ChartJS.register(
 export default function DashboardPage() {
   const router = useRouter();
   const amountRef = useRef(null);
-
-  const [uid, setUid] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false); 
+  const [userEmail, setUserEmail] = useState(null);
   const [statusMsg, setStatusMsg] = useState("");
+  const [showModal, setShowModal] = useState(false);
 
   const [user, setUser] = useState({
     name: "User",
@@ -56,11 +60,10 @@ export default function DashboardPage() {
     userPhoto: "",
   });
 
-  // ✅ Firebase Auth + User Info
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (usr) => {
       if (usr) {
-        setUid(usr.uid);
+        setUserEmail(usr.email);
         const { userName, userEmail, userPhoto } = getUserInfo();
         setUserProfile({ userName, userEmail, userPhoto });
       } else {
@@ -71,32 +74,24 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // ✅ Fetch user data (corrected endpoint)
   useEffect(() => {
-    if (!uid) return;
+    if (!userEmail) return;
 
     const fetchUser = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:5000/user-data/${uid}`);
-        if (!res.ok) {
-          console.error("User data fetch failed:", res.status);
-          throw new Error("Fetch error");
-        }
+        const res = await fetch(`http://127.0.0.1:5000/user-data/${userEmail}`);
+        if (!res.ok) throw new Error("User data fetch failed");
 
         const data = await res.json();
-        setUser((prev) => ({
-          ...prev,
-          ...data,
-        }));
+        setUser((prev) => ({ ...prev, ...data }));
       } catch (err) {
         console.error("Fetch user error:", err);
       }
     };
 
     fetchUser();
-  }, [uid]);
+  }, [userEmail]);
 
-  // ✅ Update progress
   const handleSaveProgress = async () => {
     const amount = parseFloat(amountRef.current?.value);
     if (!amount || amount <= 0) {
@@ -108,7 +103,7 @@ export default function DashboardPage() {
       const res = await fetch("http://127.0.0.1:5000/update-progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: uid, amount }),
+        body: JSON.stringify({ user_id: userEmail, amount }),
       });
 
       const data = await res.json();
@@ -116,15 +111,13 @@ export default function DashboardPage() {
         setStatusMsg("✅ Progress updated");
         amountRef.current.value = "";
 
-        // Refetch user data after update
-        const refreshed = await fetch(`http://127.0.0.1:5000/user-data/${uid}`);
+        const refreshed = await fetch(`http://127.0.0.1:5000/user-data/${userEmail}`);
         const freshData = await refreshed.json();
         setUser((prev) => ({ ...prev, ...freshData }));
       } else {
         setStatusMsg("❌ Error updating progress");
       }
     } catch (err) {
-      console.error(err);
       setStatusMsg("❌ Server error");
     }
   };
@@ -133,18 +126,6 @@ export default function DashboardPage() {
     user.predicted_saving > 0
       ? Math.ceil((user.goal_amount - user.saved_till_now) / user.predicted_saving)
       : null;
-
-  // ✅ Donut Chart: Goal Progress
-  const donutData = {
-    labels: ["Completed", "Remaining"],
-    datasets: [
-      {
-        data: [user.goalProgress, 100 - user.goalProgress],
-        backgroundColor: ["#8B4513", "#f3f3f3"],
-        borderWidth: 0,
-      },
-    ],
-  };
 
   const halfDonutData = {
     labels: ["Months Left", "Completed"],
@@ -196,83 +177,129 @@ export default function DashboardPage() {
     maintainAspectRatio: false,
   };
 
-  // ✅ Final UI
   return (
-    <div className="min-h-screen bg-[#fff8f2] p-4 text-[#4e342e]">
-      <h1 className="text-center text-5xl font-extrabold mb-2" style={{ color: "#8B4513" }}>
-        Welcome, {userProfile.userName || user.name || "User"}
-      </h1>
-      <p className="text-center text-sm mb-8 text-[#6b4c3b]">
-        Here's your financial goal overview
-      </p>
+    <div className="min-h-screen bg-[#fdf7ee] text-[#222] font-sans relative">
+      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto items-start">
-        {/* 🎯 Current Goal */}
-        <div className="bg-[#fff0e0] rounded-2xl shadow-md p-6 flex flex-col items-center h-[520px] justify-between">
-          <div className="flex flex-col items-center">
-            <h2 className="text-xl font-bold text-[#8B4513] mb-2">🎯 Current Goal</h2>
-            <p className="mb-2">To Save For {user.goal_type || "..."}</p>
-            <div className="w-60 h-60">
-              <Doughnut data={donutData} options={{ cutout: "70%" }} />
+      <div className="pt-8 px-4 md:px-12">
+        {/* Heading */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-snug">
+            Welcome, <span className="text-[#203C5B]">{userProfile.userName || user.name || "User"}</span>
+          </h1>
+          <p className="mt-3 text-base md:text-lg text-[#666] font-medium">
+            Here’s your personalized <span className="text-[#e28555] font-semibold">financial goal</span> dashboard
+          </p>
+        </div>
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+          {/* 🎯 Current Goal */}
+          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-6 flex flex-col justify-between h-[520px] transition-all hover:shadow-2xl">
+            <div className="text-2xl font-bold text-[#e28555] flex items-center justify-center gap-2 mb-3">
+              <Target className="w-6 h-6" />
+              Current Goal
             </div>
-            <div className="text-center mt-[-10px]">
-              <p className="text-sm font-semibold text-[#8B4513]">{user.goalProgress}% Complete</p>
-              <p className="text-sm">
-                ₹{user.saved_till_now} saved of ₹{user.goal_amount}
+            <p className="text-sm text-center text-[#666] mb-3">
+              To Save For <strong>{user.goal_type || "..."}</strong>
+            </p>
+            <div className="flex justify-center items-center flex-grow">
+              <div className="w-[220px] h-[220px]">
+                <Doughnut
+                  data={{
+                    labels: ["Completed", "Remaining"],
+                    datasets: [
+                      {
+                        data: [user.goalProgress, 100 - user.goalProgress],
+                        backgroundColor: ["#D86C4F", "#D8A39D"],
+                        borderWidth: 0,
+                      },
+                    ],
+                  }}
+                  options={{ cutout: "72%", plugins: { legend: { display: false } } }}
+                />
+              </div>
+            </div>
+            <div className="text-center mt-4 space-y-1">
+              <p className="text-sm font-semibold text-[#222]">{user.goalProgress}% Complete</p>
+              <p className="text-sm text-[#666]">₹{user.saved_till_now} saved of ₹{user.goal_amount}</p>
+            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="w-full bg-[#e28555] text-white mt-5 py-2 rounded-xl hover:bg-[#d46c40] transition font-semibold text-sm shadow-sm"
+            >
+              + Set / Edit Goal
+            </button>
+          </div>
+
+          {/* 📅 Monthly Progress */}
+          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-6 flex flex-col justify-between h-[520px] transition-all hover:shadow-2xl">
+            <div className="text-2xl font-bold text-[#e28555] flex items-center justify-center gap-2 mb-3">
+              <BarChart2 className="w-6 h-6" />
+              Monthly Progress
+            </div>
+            <div className="text-center space-y-2 text-sm text-[#555] mb-2">
+              <p>
+                <span className="font-medium text-[#222]">Predicted Saving:</span> ₹{user.predicted_saving}
+              </p>
+              <p>
+                <span className="font-medium text-[#222]">Remaining to Goal:</span> ₹{user.goal_amount - user.saved_till_now}
+              </p>
+              <p>
+                <span className="font-medium text-[#222]">Estimated Months Left:</span>{" "}
+                <strong>{computedMonthsLeft || "N/A"}</strong>
               </p>
             </div>
-          </div>
-          <button
-            onClick={() => router.push("/savings")}
-            className="w-full bg-[#d64b3d] text-white mt-4 py-2 rounded-lg hover:bg-[#a93e34]"
-          >
-            + Set / Edit Goal
-          </button>
-        </div>
 
-        {/* 📊 Monthly Progress */}
-        <div className="bg-[#fff0e0] rounded-2xl shadow-md p-6 flex flex-col items-center h-[520px] justify-between">
-          <div className="text-center w-full">
-            <h2 className="text-xl font-bold text-[#8B4513] mb-4">📊 Monthly Progress</h2>
-            <p>Predicted Saving: ₹{user.predicted_saving}</p>
-            <p>Remaining to Goal: ₹{user.goal_amount - user.saved_till_now}</p>
-            <p>
-              Estimated Months Left: <strong>{computedMonthsLeft || "N/A"}</strong>
-            </p>
-            <div className="w-48 h-28 mt-4 mb-2 mx-auto">
-              <Doughnut data={halfDonutData} options={halfDonutOptions} />
+            <div className="flex justify-center items-center mt-4 h-[110px]">
+              <div className="w-[180px] h-[100px]">
+                <Doughnut data={halfDonutData} options={halfDonutOptions} />
+              </div>
             </div>
-            <p className="text-green-600 text-sm mt-2">
-              🚀 Keep going! You are making progress!
-            </p>
-          </div>
-          <div className="w-full mt-4">
-            <input
-              ref={amountRef}
-              type="number"
-              placeholder="Enter amount"
-              className="mt-2 p-2 border rounded w-full"
-            />
-            <button
-              onClick={handleSaveProgress}
-              className="w-full mt-3 bg-[#d64b3d] text-white py-2 rounded-lg hover:bg-[#a93e34]"
-            >
-              Save Progress
-            </button>
-            {statusMsg && (
-              <p className="text-sm text-center text-[#8B4513] mt-2">{statusMsg}</p>
-            )}
-          </div>
-        </div>
 
-        {/* 📈 Weekly Trend */}
-        <div className="bg-[#fff0e0] rounded-2xl shadow-md p-6 flex flex-col items-center h-[520px]">
-          <h2 className="text-xl font-bold text-[#8B4513] mb-4">📈 Weekly Saving Trend</h2>
-          <div className="w-full h-[320px]">
-            <Line data={weeklyTrendData} options={weeklyTrendOptions} />
+            <p className="text-green-600 text-sm text-center mt-2 flex items-center justify-center gap-1">
+              <TrendingUp className="w-4 h-4" />
+              <span className="font-medium">Keep going! You're making progress!</span>
+            </p>
+
+            <div className="w-full mt-5">
+              <input
+                ref={amountRef}
+                type="number"
+                placeholder="Enter amount"
+                className="p-2 border border-[#ddd] rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-[#e28555] text-sm"
+              />
+              <button
+                onClick={handleSaveProgress}
+                className="w-full mt-3 bg-[#e28555] text-white py-2 rounded-xl hover:bg-[#d46c40] transition font-semibold text-sm shadow-sm"
+              >
+                Save Progress
+              </button>
+              {statusMsg && (
+                <p className="text-sm text-center text-[#e28555] mt-2">{statusMsg}</p>
+              )}
+            </div>
+          </div>
+
+          {/* 📈 Weekly Trend */}
+          <div className="bg-white/90 backdrop-blur rounded-2xl shadow-xl p-6 flex flex-col h-[520px] transition-all hover:shadow-2xl">
+            <div className="text-2xl font-bold text-[#e28555] flex items-center justify-center gap-2 mb-4">
+              <TrendingUp className="w-6 h-6" />
+              Weekly Saving Trend
+            </div>
+            <div className="flex-grow w-full">
+              <div className="relative h-full">
+                <Line data={weeklyTrendData} options={weeklyTrendOptions} />
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ✅ Correct placement of modal outside layout */}
+      {showModal && (
+        <SavingsModal isOpen={showModal} onClose={() => setShowModal(false)} />
+      )}
     </div>
   );
 }

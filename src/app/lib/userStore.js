@@ -1,20 +1,25 @@
-// app/lib/userStore.js
-
-let userName = "";
-let userEmail = "";
-let userPhoto = "";
-let userUid = ""; // ✅ Add UID
-
 export const setUserInfo = (user) => {
-  userName = user?.displayName || "";
-  userEmail = user?.email || "";
-  userPhoto = user?.photoURL || "";
-  userUid = user?.uid || ""; // ✅ Save UID from Firebase
+  if (typeof window !== "undefined") {
+    localStorage.setItem("userName", user?.displayName || "");
+    localStorage.setItem("userEmail", user?.email || "");
+    localStorage.setItem("userPhoto", user?.photoURL || "");
+    localStorage.setItem("userUid", user?.uid || "");
+  }
 };
 
-export const getUserInfo = () => ({
-  userName,
-  userEmail,
-  userPhoto,
-  uid: userUid, // ✅ Include UID in exported object
-});
+export const getUserInfo = () => {
+  if (typeof window !== "undefined") {
+    return {
+      userName: localStorage.getItem("userName") || "",
+      userEmail: localStorage.getItem("userEmail") || "",
+      userPhoto: localStorage.getItem("userPhoto") || "",
+      uid: localStorage.getItem("userUid") || "",
+    };
+  }
+  return {
+    userName: "",
+    userEmail: "",
+    userPhoto: "",
+    uid: "",
+  };
+};

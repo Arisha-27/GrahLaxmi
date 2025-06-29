@@ -10,8 +10,23 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/app/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { v4 as uuidv4 } from "uuid";
 import { marked } from "marked";
+// import Sidebar from '@/components/Sidebar';
+import {
+  Menu,
+  Home,
+  Landmark,
+  MessageCircle,
+  LogOut,
+  X,
+} from 'lucide-react';
 
 // ✅ Voice Recognition Setup
 const SpeechRecognition =
@@ -25,6 +40,16 @@ if (SpeechRecognition) {
 }
 
 export default function Chatbot() {
+  const [user] = useAuthState(auth);
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+
+   const goTo = (path) => {
+    router.push(path);
+    setSidebarOpen(false);
+  };
+
   const [chats, setChats] = useState(() => {
     const saved =
       typeof window !== "undefined" && localStorage.getItem("chats");
@@ -189,8 +214,67 @@ export default function Chatbot() {
     recognition.start();
   };
 
+  
   return (
     <div className="flex w-screen h-screen overflow-hidden text-[#222] bg-[#fdf7ee]">
+      {/* ☰ Hamburger Icon */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 bg-[#203C5B] p-2 rounded-full shadow-md hover:bg-[#e28555] transition-colors"
+        >
+          <Menu className="text-white w-6 h-6" />
+        </button>
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 h-full w-64 bg-white/90 backdrop-blur-md border-r border-[#f2c66d]/30 shadow-2xl p-6 pt-14 transition-transform duration-300 z-40 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="absolute top-4 right-4 text-[#203C5B] hover:text-[#e28555] transition"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        <div onClick={() => goTo('/dashboard')} className="cursor-pointer flex flex-col items-center mb-6">
+          <Image
+            src={user?.photoURL || '/default-avatar.png'}
+            alt="Profile"
+            width={60}
+            height={60}
+            className="rounded-full border-2 border-[#e28555]"
+          />
+          <h2 className="text-base font-semibold mt-2 text-[#203C5B]">
+            {user?.displayName || 'User'}
+          </h2>
+          <p className="text-[#666] text-xs">{user?.email || ''}</p>
+        </div>
+
+        <nav className="flex flex-col gap-4 text-[#203C5B] font-medium text-sm">
+          <p onClick={() => goTo('/dashboard')} className="flex items-center gap-2 cursor-pointer hover:text-[#e28555]">
+            <Home className="w-5 h-5" /> Dashboard
+          </p>
+          <p onClick={() => goTo('/govt_scheme')} className="flex items-center gap-2 cursor-pointer hover:text-[#e28555]">
+            <Landmark className="w-5 h-5" /> Govt Schemes
+          </p>
+          <p onClick={() => goTo('/chatbot')} className="flex items-center gap-2 cursor-pointer hover:text-[#e28555]">
+            <MessageCircle className="w-5 h-5" /> Chatbot
+          </p>
+          <p
+            onClick={async () => {
+              await signOut(auth);
+              router.push('/login');
+            }}
+            className="flex items-center gap-2 cursor-pointer text-red-500 hover:underline"
+          >
+            <LogOut className="w-5 h-5" /> Logout
+          </p>
+        </nav>
+      </div>
       {/* Sidebar */}
 <aside className="w-72 bg-gradient-to-b from-[#F2C66D] via-[#f4e4d7] to-[#F2C66D] text-[#222] p-6 flex flex-col justify-between border-r border-[#e8d1a0] shadow-xl">
   {/* Top Logo & Title */}

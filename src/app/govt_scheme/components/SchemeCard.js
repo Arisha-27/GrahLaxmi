@@ -25,44 +25,45 @@ export default function SchemeCard({ scheme }) {
     typeof url === 'string' && url.trim() !== '' && url.startsWith('http');
 
   return (
-    <div className="bg-[#fffaf3] border border-[#f2c66d] p-6 rounded-2xl shadow-sm hover:shadow-md transition duration-300 space-y-3">
-      <h3 className="text-lg md:text-xl font-semibold text-[#222]">
-        {scheme['Scheme Name']}
-      </h3>
+    <div className="w-full md:w-[49%]">
+      <div className="bg-[#fffaf3] border border-[#f2c66d] p-6 rounded-2xl shadow-sm hover:shadow-md transition duration-300 space-y-3 h-full">
+        <h3 className="text-lg md:text-xl font-semibold text-[#222]">
+          {scheme['Scheme Name']}
+        </h3>
 
-      <p className="text-sm text-[#666] leading-relaxed">
-        {scheme.Description}
-      </p>
+        <p className="text-sm text-[#666] leading-relaxed">
+          {scheme.Description}
+        </p>
 
-      {Array.isArray(subCategories) && subCategories.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {subCategories.map((cat, i) => (
-            <span
-              key={i}
-              className={`text-xs font-medium px-3 py-1 rounded-full ${tagColors[i % tagColors.length]}`}
-            >
-              {cat}
-            </span>
-          ))}
-        </div>
-      )}
+        {Array.isArray(subCategories) && subCategories.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {subCategories.map((cat, i) => (
+              <span
+                key={i}
+                className={`text-xs font-medium px-3 py-1 rounded-full ${tagColors[i % tagColors.length]}`}
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
+        )}
 
-      {/* Apply Button or Fallback */}
-      {isValidURL(scheme['Apply Link']) ? (
-        <a
-          href={scheme['Apply Link']}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-3 py-1 bg-[#e28555] text-white text-xs font-medium rounded-full hover:bg-[#d86c4f] transition mt-2"
-        >
-          Apply Now
-          <ExternalLink size={14} />
-        </a>
-      ) : (
-        <span className="inline-block text-xs font-medium text-[#999] bg-gray-100 px-3 py-1 rounded-full mt-2">
-          Online link unavailable
-        </span>
-      )}
+        {isValidURL(scheme['Apply Link']) ? (
+          <a
+            href={scheme['Apply Link']}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1 bg-[#e28555] text-white text-xs font-medium rounded-full hover:bg-[#d86c4f] transition mt-2"
+          >
+            Apply Now
+            <ExternalLink size={14} />
+          </a>
+        ) : (
+          <span className="inline-block text-xs font-medium text-[#999] bg-gray-100 px-3 py-1 rounded-full mt-2">
+            Online link unavailable
+          </span>
+        )}
+      </div>
     </div>
   );
 }
